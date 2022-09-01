@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package qulot.daprgrpcecho.v1;
+option go_package = "./v1";
+option java_package = "com.daprgrpcecho.grpc.v1";
+
+message EchoRequest {
+    string message = 1;
+}
+message EchoReply {
+	string message = 1;
+}
