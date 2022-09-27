@@ -9,9 +9,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.datntz.daprjavagrpc.utils.ProtobufUtils;
 import com.google.protobuf.AbstractMessage;
 
+import io.dapr.client.domain.HttpExtension;
 import io.dapr.client.domain.InvokeMethodRequest;
 import io.dapr.client.domain.QueryStateItem;
 import io.dapr.client.domain.QueryStateRequest;
@@ -27,9 +27,6 @@ public class DaprClient {
 
     private static volatile io.dapr.client.DaprClient instance;
     private static volatile io.dapr.client.DaprPreviewClient instancePreview;
-    private static final TypeRef<byte[]> INVOKE_TYPEREF = new TypeRef<byte[]>() {
-
-    };
 
     /**
      * Returns an DaprClient object.
@@ -62,6 +59,21 @@ public class DaprClient {
 
     /**
      * 
+     * @param <T>
+     * @param data
+     * @param clazz
+     * @return
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
+    protected <T extends AbstractMessage> T unpack(byte[] data, Class<T> clazz) throws Exception {
+        var parseFrom = clazz.getMethod("parseFrom", byte[].class);
+        var responseObj = (T) parseFrom.invoke(null, data);
+        return responseObj;
+    }
+
+    /**
+     * 
      * @param <TRequest>
      * @param <TResponse>
      * @param appId
@@ -75,12 +87,20 @@ public class DaprClient {
             TRequest requestData,
             Class<TResponse> responseClazz) {
         var invokeMethodRequest = new InvokeMethodRequest(appId, method);
-        invokeMethodRequest.setBody(ProtobufUtils.pack(requestData));
-        var response = getInstance().invokeMethod(invokeMethodRequest, INVOKE_TYPEREF).block();
-        if (response == null || response.length == 0) {
-            return Optional.empty();
+        invokeMethodRequest.setBody(requestData.toByteArray());
+        invokeMethodRequest.setHttpExtension(HttpExtension.POST);
+
+        try {
+            var response = getInstance().invokeMethod(invokeMethodRequest, TypeRef.BYTE_ARRAY).block();
+            if (response != null) {
+                return Optional.of(unpack(response, responseClazz));
+            }
+
+        } catch (Exception e) {
+            log.error("dapr client invoke request error: {}", e.toString());
+            e.printStackTrace();
         }
-        return ProtobufUtils.unpack(response, responseClazz);
+        return Optional.empty();
     }
 
     final Map<String, DaprState> states = new HashMap<>();

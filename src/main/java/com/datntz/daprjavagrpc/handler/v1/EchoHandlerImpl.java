@@ -24,7 +24,7 @@ public class EchoHandlerImpl implements InvokeMethodHandler {
         String message = null;
 
         try {
-            requestData = request.getData().unpack(EchoRequest.class);
+            requestData = EchoRequest.parseFrom(request.getData().getValue());
 
             // get value from request data
             message = requestData.getMessage();
