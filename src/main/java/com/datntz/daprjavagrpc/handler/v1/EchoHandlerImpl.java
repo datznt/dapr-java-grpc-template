@@ -9,6 +9,7 @@ import com.daprgrpcecho.grpc.v1.DaprGrpcEcho.EchoRequest;
 import com.datntz.daprjavagrpc.handler.BaseInvokeMethodHandler;
 import com.datntz.daprjavagrpc.service.EchoService;
 import com.google.protobuf.AbstractMessage;
+import com.google.protobuf.Parser;
 
 import io.grpc.Status;
 
@@ -39,8 +40,8 @@ public class EchoHandlerImpl extends BaseInvokeMethodHandler<EchoRequest> {
     }
 
     @Override
-    public Class<EchoRequest> getTypeRequest() {
-        return EchoRequest.class;
+    public Parser<EchoRequest> getRequestParser() {
+        return EchoRequest.parser();
     }
 
 }
